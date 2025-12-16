@@ -1,76 +1,92 @@
+############################
 # Python
+############################
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+*.so
 
-# Virtual Environment
+############################
+# Virtual Environments
+############################
 .venv/
 venv/
 ENV/
 env/
 .ENV
 
+############################
 # Environment variables
+############################
 .env
 .env.local
 .env.*.local
 
-# IDE
+############################
+# IDE / Editor
+############################
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pytest
+############################
+# Testing / Typing
+############################
 .pytest_cache/
 .coverage
 htmlcov/
-
-# mypy
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# Output files
+############################
+# Build / Distribution
+############################
+build/
+dist/
+sdist/
+*.egg-info/
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+############################
+# Runtime / Output
+############################
 *.log
 output.txt
 test_output.txt
 
-# Database
+############################
+# Database (runtime only)
+############################
 *.db
 *.sqlite
 *.sqlite3
 
-# OS
-Thumbs.db
-.DS_Store
+############################
+# Jupyter
+############################
+.ipynb_checkpoints/
 
-# Project specific
-*.txt
+
+############################
+# Project rules (IMPORTANT)
+############################
+
+# ❌ 不要全局忽略 *.txt（会误伤 Alembic / docs）
+# *.txt   <-- 永远不要加这条
+
+# ✅ 明确跟踪 Alembic migrations（防止被误伤）
+!db/alembic/versions/*.py
+
+# ✅ README / 文档必须进 Git
 !README.md
-!requirments.txt
+
+# ✅ SQL schema / migration 辅助文件
+!db/**/*.sql
