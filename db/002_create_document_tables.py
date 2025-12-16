@@ -24,8 +24,17 @@ def upgrade() -> None:
         sa.Column('source_url', sa.Text(), nullable=False),
         sa.Column('title', sa.Text(), nullable=True),
         sa.Column('content', sa.Text(), nullable=True),
+        sa.Column('content_hash', sa.String(64), nullable=True, comment='内容哈希值，用于判断页面内容是否有变化'),
         sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
         sa.PrimaryKeyConstraint('id'),
+        schema='public'
+    )
+    
+    # 为 content_hash 创建索引以便快速查找
+    op.create_index(
+        'idx_document_content_hash',
+        'document',
+        ['content_hash'],
         schema='public'
     )
     
@@ -60,6 +69,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # 删除索引
     op.execute("DROP INDEX IF EXISTS public.idx_document_chunk_embedding")
+    op.drop_index('idx_document_content_hash', table_name='document', schema='public')
     
     # 删除表（自动处理外键约束）
     op.drop_table('document_chunk', schema='public')
