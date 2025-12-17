@@ -1,7 +1,7 @@
 """
 文本分割器 - 用于将文档分割成小块
 """
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List
 
 

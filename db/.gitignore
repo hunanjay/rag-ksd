@@ -1,6 +1,0 @@
-# Alembic
-alembic/versions/*.py
-!alembic/versions/.gitkeep
-__pycache__/
-*.pyc
-

@@ -5,6 +5,7 @@
 特点：
 - RAG 检索逻辑完全复用 app.utils.rag_tools / db_tools
 - 不依赖 langchain.agents 内部类型，避免版本兼容问题
+- 继承 BaseAgent 获得默认流式支持
 """
 from typing import Any, Dict, List
 import os
@@ -15,12 +16,13 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from agent.registry import register_agent
+from agent.base_agent import BaseAgent
 from app.utils.rag_tools import rag_search, get_document_details  # 仅作为工具使用
 
 load_dotenv()
 
 
-class RagAgent:
+class RagAgent(BaseAgent):
     """一个简单的 RAG Agent 封装，提供 .invoke() 接口。"""
 
     def __init__(self, llm: ChatOpenAI, system_prompt: str) -> None:
@@ -80,6 +82,48 @@ class RagAgent:
                 }
             ],
         }
+
+    async def astream(self, inputs: Dict[str, Any]):
+        """
+        流式执行对话（异步生成器）。
+
+        期望 inputs 结构：
+        {
+            "input": "用户问题",
+            "chat_history": [HumanMessage/AIMessage, ...]  # 可选
+        }
+        """
+        question: str = inputs.get("input", "")
+        chat_history: List[Any] = inputs.get("chat_history") or []
+
+        # 1. 使用 rag_search 工具检索相关文档
+        retrieved = rag_search.run(question)
+
+        # 2. 构造增强后的 system prompt
+        if retrieved and retrieved != "未找到相关文档":
+            enhanced_system = (
+                f"{self.system_prompt}\n\n"
+                f"以下是检索到的相关文档内容，请优先基于这些内容回答问题：\n"
+                f"{retrieved}\n\n"
+                f"如果文档中仍然没有相关信息，请明确说明。"
+            )
+        else:
+            enhanced_system = (
+                f"{self.system_prompt}\n\n"
+                f"未检索到与用户问题高度相关的文档内容，"
+                f"请基于你已有的知识进行回答，并说明未找到相关文档。"
+            )
+
+        # 3. 组装消息：system + 历史 + 当前问题
+        messages: List[Any] = [SystemMessage(content=enhanced_system)]
+        messages.extend(chat_history)
+        messages.append(HumanMessage(content=question))
+
+        # 4. 流式调用 LLM
+        async for chunk in self.llm.astream(messages):
+            if hasattr(chunk, 'content') and chunk.content:
+                content = chunk.content
+                yield content
 
 
 def create_rag_agent() -> RagAgent:
